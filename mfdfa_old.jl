@@ -8,8 +8,7 @@ Front. Physiol., 04 June 2012 | https://doi.org/10.3389/fphys.2012.00141
 using StatsBase, Polynomials, DataFrames, GLM, Polynomials.PolyCompat
 
 
-function MFDFA(signal, scale, q, m)
-
+function MFDFAold(signal, scale, q, m)
 #== Multifractal detrended fluctuation analysis (MFDFA)
 [Hq,tq,hq,Dq,Fq]=MFDFA(signal,scale,q,m);
 INPUT PARAMETERS---------------------------------------------------------
@@ -17,13 +16,29 @@ signal:       input signal
 scale:        vector of scales
 q:            q-order that weights the local variations
 m:            polynomial order for the detrending
-
+Fig:          1/0 flag for output plot of Fq, Hq, tq and multifractal
+           spectrum (i.e. Dq versus hq).
 OUTPUT VARIABLES---------------------------------------------------------
 Hq:           q-order Hurst exponent
 tq:           q-order mass exponent
 hq:           q-order singularity exponent
 Dq:           q-order dimension
 Fq:           q-order scaling function
+EXAMPLE------------------------------------------------------------------
+load fractaldata
+scmin=16;
+scmax=1024;
+scres=19;
+exponents=range(log2(scmin),log2(scmax),length = scres);
+scale= round.(2 .^exponents)
+q=[-5:5;]
+m=1
+signal1=multifractal;
+signal2=monofractal;
+signal3=whitenoise;
+[Hq1,tq1,hq1,Dq1,Fq1]=MFDFA1(signal1,scale,q,m,1);
+[Hq2,tq2,hq2,Dq2,Fq2]=MFDFA1(signal2,scale,q,m,1);
+[Hq3,tq3,hq3,Dq3,Fq3]=MFDFA1(signal3,scale,q,m,1);
 --------------------------------------------------------------------==#
 
 
@@ -46,13 +61,12 @@ Fq:           q-order scaling function
     # if min(scale)<m+1
     #    error('The minimum scale must be larger than trend order m+1')
     # end
-
     for ns=1:length(scale)
         # segments[ns]=floor(length(X)/scale[ns]);
         segments = floor(length(X)/scale[ns])
         for v=1:segments
             Index=Int.([(((v-1)*scale[ns])+1):v*scale[ns];])
-            C=Polynomials.PolyCompat.polyfit(Index,X[Index],m);
+            C=Polynomials.fit(Index,X[Index],m);
             pfit = Polynomials.PolyCompat.polyval(C,Index)
             push!(RMS_scale[ns],sqrt(mean((X[Index]-pfit).^2)))
         end
@@ -81,8 +95,6 @@ Fq:           q-order scaling function
     hq = diff(tq)./(q[2]-q[1])
     Dq = q[1:(length(q)-1)].*hq-tq[1:(length(tq)-1)]
 
-    mfw = maximum(hq) - minimum(hq);
-
 
     output = Dict("Hq" => Hq,
                     "Hq_r2" => Hq_r2,
@@ -91,7 +103,6 @@ Fq:           q-order scaling function
                     "Dq" => Dq,
                     "Fq" => Fq,
                     "q" => q,
-                    "mfw" => mfw
                     )
 
     return output

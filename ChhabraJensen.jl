@@ -9,8 +9,7 @@ https://lucasfr.github.io/, http://xaphire.de/
 
 #INPUT:
 
-#This function assumes that your time series is all positive values (sign transform it if needed)
-#None of the qValue can be between 0 and 1.
+This function assumes that your time series is all positive values (sign transform it if needed)
 
 #OUTPUT:
 #alpha and falpha scattered against each other give the multifractal spectrum
