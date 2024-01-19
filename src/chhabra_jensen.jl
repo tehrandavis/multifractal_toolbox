@@ -23,9 +23,41 @@ This function calculates the Chhabra-Jensen multifractal spectrum of a time seri
     - `Rsqr_Dq`: The R² values for the linear regression of `Dq`.
     - `q`: The q-values used for the analysis.
     - `mfw`: The width of the multifractal spectrum.
+    
+# Example
+using Random, Distributions
+
+function generate_multifractal_ts(length_ts, cascade_steps, distribution)
+    ts = rand(length_ts)  # Start with a normal random time series
+    for step in 1:cascade_steps
+        segment_length = max(length_ts ÷ 2^step, 1)
+        for i in 1:segment_length:length_ts
+            multiplier = rand(distribution)
+            ts[i:min(i+segment_length-1, length_ts)] .*= multiplier
+        end
+    end
+    return ts
+end
+
+# Parameters
+length_ts = 2^13 # 8192
+cascade_steps = 10
+distribution = LogNormal(0, 0.5)  # Example distribution
+
+# Generate the time series
+ts = generate_multifractal_ts(length_ts, cascade_steps, distribution)
+
+qValues = LinRange(-15,15,31)
+exponents = LinRange(2,8,7)
+scales = round.(2 .^exponents)
+
+# call the function
+cj_results = ChhabraJensen(ts, qValues, scales; plot = true)
+
 """
 function ChhabraJensen(timeseries, qValues, scales; plot = true)
-    timeseries_trim = length(timeseries) % 2^scales[end]
+    scales = Int.(scales)
+    timeseries_trim = length(timeseries) % scales[end]
     timeseries = timeseries[1:(end-timeseries_trim)]
 
     nq, ns = length(qValues), length(scales)
@@ -33,13 +65,13 @@ function ChhabraJensen(timeseries, qValues, scales; plot = true)
     alpha, falpha, Dq = zeros(nq), zeros(nq), zeros(nq)
     Rsqr_alpha, Rsqr_falpha, Rsqr_Dq = zeros(nq), zeros(nq), zeros(nq)
 
-    muScale = -log10.(2 .^ scales)
+    muScale = -log10.(scales)
     timeseriesSummed = sum(timeseries)
 
     for i in 1:nq
         q = qValues[i]
         for j in 1:ns
-            window = 2^scales[j]
+            window = scales[j]
             timeseriesReshaped = reshape(timeseries, :, window)
             p = sum(timeseriesReshaped, dims = 1) / timeseriesSummed
             Nor = sum(p.^q)

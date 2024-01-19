@@ -2,15 +2,15 @@
 # MFDFA
 
 ```
-mfdfa(signal, scale, q, m; plot = true)
+mfdfa(timeseries, q, scales, m; plot = true)
 ```
 
 Julia implementation of the Multifractal Detrended Fluctuation Analysis (MFDFA) algorithm.
 
 ## Input arguments:
 
-* `signal`: the signal to be analyzed
-* `scale`: the scales to be used in the analysis
+* `timeseries`: the timeseries to be analyzed
+* `scales`: the scales to be used in the analysis
 * `q`: the q values to be used in the analysis
 * `m`: the order of the polynomial to be used in the local trend estimation
 * `plot`: whether to plot the q-order scaling function and mfw (default = true)
@@ -28,34 +28,34 @@ Julia implementation of the Multifractal Detrended Fluctuation Analysis (MFDFA) 
 
 """
 
-function mfdfa(signal, scale, q, m; plot = true)
+function mfdfa(timeseries, q, scales, m; plot = true)
 
-    X=cumsum(signal.-mean(signal), dims=1);
+    X=cumsum(timeseries.-mean(timeseries), dims=1);
 
-    RMS_scale = [Float64[] for i=1:length(scale)]
-    qRMS = [Float64[] for i=1:length(q),j=1:length(scale)]
-    Fq = Array{Float64}(undef, length(q), length(scale))
+    RMS_scales = [Float64[] for i=1:length(scales)]
+    qRMS = [Float64[] for i=1:length(q),j=1:length(scales)]
+    Fq = Array{Float64}(undef, length(q), length(scales))
     Hq = Float64[]
     Hq_r2 = Float64[]
     qRegLine = []
 
-    for ns=1:length(scale)
-        segments = floor(length(X)/scale[ns])
+    for ns=1:length(scales)
+        segments = floor(length(X)/scales[ns])
         for v=1:segments
-            Index=Int.([(((v-1)*scale[ns])+1):v*scale[ns];])
+            Index=Int.([(((v-1)*scales[ns])+1):v*scales[ns];])
             C=Polynomials.PolyCompat.polyfit(Index,X[Index],m);
             pfit = Polynomials.PolyCompat.polyval(C,Index)
-            push!(RMS_scale[ns],sqrt(mean((X[Index]-pfit).^2)))
+            push!(RMS_scales[ns],sqrt(mean((X[Index]-pfit).^2)))
         end
         for nq=1:length(q)
-            qRMS[nq,ns] = RMS_scale[ns].^q[nq]
+            qRMS[nq,ns] = RMS_scales[ns].^q[nq]
             Fq[nq,ns]=mean(qRMS[nq,ns]) .^(1/q[nq])
         end
-        Fq[findall(x->x==0,q),ns].=exp(0.5*mean(log.(RMS_scale[ns].^2)));
+        Fq[findall(x->x==0,q),ns].=exp(0.5*mean(log.(RMS_scales[ns].^2)));
     end
     for nq=1:length(q)
         # using GLM: benefit we get R-squared
-        C = GLM.lm(@formula(y~x),DataFrame(y=log2.(Fq[nq,:]),x=log2.(scale)))
+        C = GLM.lm(@formula(y~x),DataFrame(y=log2.(Fq[nq,:]),x=log2.(scales)))
         push!(Hq,GLM.coef(C)[2])
         push!(qRegLine,GLM.predict(C))
         push!(Hq_r2, GLM.r²(C))
@@ -67,12 +67,16 @@ function mfdfa(signal, scale, q, m; plot = true)
 
     mfw = maximum(hq) - minimum(hq);
     
-    if plot
-        mf_spectrum_plot = Plots.plot(hq, Dq,seriestype=:scatter, legend=false, xlabel = "hq", ylabel = "Dq", title="mfw: $(round(mfw, digits=3))")
-        Hq_q_plot = Plots.plot(q, Hq, seriestype=:scatter, legend=false, xlabel = "q", ylabel = "Hq")
-        diag_plot = Plots.plot(Hq_q_plot, mf_spectrum_plot, size = (1000,500), margin = 5Plots.mm)
+    
+    if plot      
+
+        # Create the plot with the data and the curve
+        mf_spectrum_plot = Plots.plot(hq, Dq, legend=false, xlabel = "hq", ylabel = "Dq", title="mfw: $(round(mfw, digits=3))", marker = :circle)
+        Hq_q_plot = Plots.plot(q, Hq, legend=false, xlabel = "q", ylabel = "Hq", marker = :circle)
+                
+        figure = Plots.plot(Hq_q_plot, mf_spectrum_plot, size = (1000,500), margin = 5Plots.mm)
     else
-        diag_plot = 0
+        figure = 0
     end
 
     output = Dict("Hq" => Hq,
@@ -83,7 +87,7 @@ function mfdfa(signal, scale, q, m; plot = true)
                   "Fq" => Fq,
                   "q" => q,
                   "mfw" => mfw,
-                  "diag_plot" => diag_plot)
+                  "figure" => figure)
 
     return output
 end
