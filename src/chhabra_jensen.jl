@@ -47,7 +47,7 @@ distribution = LogNormal(0, 0.5)  # Example distribution
 # Generate the time series
 ts = generate_multifractal_ts(length_ts, cascade_steps, distribution)
 
-qValues = LinRange(-15,15,31)
+q = LinRange(-15,15,31)
 exponents = LinRange(2,8,7)
 scales = round.(2 .^exponents)
 
