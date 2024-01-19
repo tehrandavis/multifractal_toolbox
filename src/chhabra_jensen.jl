@@ -92,8 +92,8 @@ function ChhabraJensen(timeseries, qValues, scales; plot = true)
     mfw = maximum(alpha) - minimum(alpha)
     
     if plot
-        mf_spectrum_plot = Plots.plot(alpha, falpha, seriestype=:scatter, legend=false, xlabel = "α(q)", ylabel = "f(q)", title="mfw: $(round(mfw, digits=3))")
-        Dq_q_plot = Plots.plot(Dq, qValues, seriestype=:scatter, legend=false, xlabel = "q", ylabel = "Dq")
+        mf_spectrum_plot = Plots.scatter(alpha, falpha, legend=false, xlabel = "α(q)", ylabel = "f(q)", title="mfw: $(round(mfw, digits=3))")
+        Dq_q_plot = Plots.scatter(qValues, Dq, legend=false, xlabel = "q", ylabel = "Dq")
         
         diag_plot = Plots.plot(Dq_q_plot, mf_spectrum_plot, size = (1000,500), margin = 5Plots.mm)
     else

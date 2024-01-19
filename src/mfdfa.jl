@@ -71,8 +71,8 @@ function mfdfa(timeseries, qValues, scales, m; plot = true)
     if plot      
 
         # Create the plot with the data and the curve
-        mf_spectrum_plot = Plots.plot(hq, Dq, legend=false, xlabel = "hq", ylabel = "Dq", title="mfw: $(round(mfw, digits=3))", marker = :circle)
-        Hq_q_plot = Plots.plot(qValues, Hq, legend=false, xlabel = "q", ylabel = "Hq", marker = :circle)
+        mf_spectrum_plot = Plots.scatter(hq, Dq, legend=false, xlabel = "hq", ylabel = "Dq", title="mfw: $(round(mfw, digits=3))")
+        Hq_q_plot = Plots.scatter(qValues, Hq, legend=false, xlabel = "q", ylabel = "Hq")
                 
         figure = Plots.plot(Hq_q_plot, mf_spectrum_plot, size = (1000,500), margin = 5Plots.mm)
     else
